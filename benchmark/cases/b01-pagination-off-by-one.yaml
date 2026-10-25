@@ -1,0 +1,19 @@
+id: b01-pagination-off-by-one
+kind: bug
+title: Add pagination helper
+body: Adds paginate() for the list endpoints.
+files:
+  - path: app/pagination.py
+    head: |
+      def paginate(items, page, per_page):
+          """Return the items on a 1-indexed page."""
+          if page < 1 or per_page < 1:
+              raise ValueError("page and per_page must be positive")
+          start = (page - 1) * per_page
+          end = start + per_page - 1
+          return items[start:end]
+labels:
+  - file: app/pagination.py
+    lines: [6, 7]
+    categories: [logic_error, edge_case]
+    note: "end is start+per_page-1 but slicing excludes end, so every page drops its last item"

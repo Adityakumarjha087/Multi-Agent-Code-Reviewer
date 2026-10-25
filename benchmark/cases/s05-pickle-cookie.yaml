@@ -1,0 +1,19 @@
+id: s05-pickle-cookie
+kind: security
+title: Store session in a cookie
+body: Avoids a server-side session store.
+files:
+  - path: app/session.py
+    head: |
+      import base64
+      import pickle
+
+
+      def load_session(cookie_value: str) -> dict:
+          """Restore the session object stored in the user's cookie."""
+          return pickle.loads(base64.b64decode(cookie_value))
+labels:
+  - file: app/session.py
+    lines: [7, 7]
+    categories: [injection, insecure_config]
+    note: "unpickling attacker-controlled data executes arbitrary code"

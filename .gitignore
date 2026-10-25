@@ -1,0 +1,14 @@
+.venv/
+.uv-cache/
+.workspaces/
+scratch/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+.pytest-tmp/
+*.egg-info/
+build/
+dist/
+benchmark/.work/
+.DS_Store

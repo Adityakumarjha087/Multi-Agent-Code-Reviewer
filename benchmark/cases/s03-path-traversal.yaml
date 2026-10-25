@@ -1,0 +1,21 @@
+id: s03-path-traversal
+kind: security
+title: Serve uploaded files
+body: Download endpoint for user uploads.
+files:
+  - path: app/files.py
+    head: |
+      import os
+
+      UPLOAD_DIR = "/srv/uploads"
+
+
+      def read_upload(filename: str) -> bytes:
+          path = os.path.join(UPLOAD_DIR, filename)
+          with open(path, "rb") as handle:
+              return handle.read()
+labels:
+  - file: app/files.py
+    lines: [7, 8]
+    categories: [injection, insecure_config]
+    note: "filename like '../../etc/passwd' (or an absolute path) escapes UPLOAD_DIR"

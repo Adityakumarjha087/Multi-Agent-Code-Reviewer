@@ -1,0 +1,24 @@
+id: b04-retry-too-few-attempts
+kind: bug
+title: Retry GET requests on connection errors
+body: Wraps requests.get with a simple retry loop.
+files:
+  - path: app/http_retry.py
+    head: |
+      import time
+
+      import requests
+
+
+      def get_with_retry(url, attempts=3, delay=1.0):
+          for attempt in range(1, attempts):
+              try:
+                  return requests.get(url, timeout=10)
+              except requests.ConnectionError:
+                  time.sleep(delay * attempt)
+          raise RuntimeError(f"failed after {attempts} attempts")
+labels:
+  - file: app/http_retry.py
+    lines: [7, 7]
+    categories: [logic_error, edge_case]
+    note: "range(1, attempts) makes attempts-1 tries; attempts=1 never calls the server"

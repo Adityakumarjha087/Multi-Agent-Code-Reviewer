@@ -1,0 +1,17 @@
+id: s02-shell-injection
+kind: security
+title: Archive export folder
+body: Lets users download their export as a tarball.
+files:
+  - path: app/archive.py
+    head: |
+      import subprocess
+
+
+      def make_archive(folder: str, name: str) -> None:
+          subprocess.run(f"tar -czf /tmp/{name}.tar.gz {folder}", shell=True, check=True)
+labels:
+  - file: app/archive.py
+    lines: [5, 5]
+    categories: [injection]
+    note: "shell=True with interpolated user input allows command injection (e.g. name='x; rm -rf ~')"

@@ -1,0 +1,18 @@
+id: c04-slugify
+kind: clean
+title: Add slugify() for article URLs
+body: Validated input, bounded length.
+files:
+  - path: app/slug.py
+    head: |
+      import re
+
+      _NON_ALNUM = re.compile(r"[^a-z0-9]+")
+
+
+      def slugify(title: str, max_length: int = 60) -> str:
+          """Lowercase, replace non-alphanumerics with '-', trim dashes, cap length."""
+          if max_length < 1:
+              raise ValueError("max_length must be positive")
+          slug = _NON_ALNUM.sub("-", title.lower()).strip("-")
+          return slug[:max_length].rstrip("-")

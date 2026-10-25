@@ -1,0 +1,92 @@
+# Least privilege per service: each service receives only the variables it needs (values come
+# from .env via Compose interpolation; there is deliberately no `env_file:` that would hand every
+# secret to every container).
+#
+#   docker compose up --build                     # postgres, migrations, sandbox, worker, UI
+#   docker compose --profile publish up --build   # also the publisher (needs GITHUB_WRITE_TOKEN)
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: prreview
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-prreview}
+      POSTGRES_DB: prreview
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # Over TCP: the image first runs a temporary socket-only init server, then restarts.
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "prreview", "-d", "prreview"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    networks: [backend]
+
+  migrate:
+    build: .
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://prreview:${POSTGRES_PASSWORD:-prreview}@postgres:5432/prreview
+    depends_on:
+      postgres: {condition: service_healthy}
+    networks: [backend]
+
+  # The only container with the Docker socket (~root on the host). It exposes fixed operations;
+  # callers cannot choose network, mounts, or limits. Runs as root because the socket is root-owned.
+  sandbox:
+    build: .
+    user: root
+    command: ["python", "-m", "prreview.mcp_servers.sandbox_server", "--transport", "streamable-http",
+              "--host", "0.0.0.0", "--port", "8001", "--allowed-host", "sandbox:*"]
+    environment:
+      GITHUB_READ_TOKEN: ${GITHUB_READ_TOKEN:-}
+      WORKSPACE_ROOT: /app/.workspaces
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks: [backend]
+
+  worker:
+    build: .
+    command: ["python", "-m", "prreview.worker"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://prreview:${POSTGRES_PASSWORD:-prreview}@postgres:5432/prreview
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GITHUB_READ_TOKEN: ${GITHUB_READ_TOKEN:-}
+      SANDBOX_MCP_URL: http://sandbox:8001/mcp
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-}
+      LANGFUSE_BASE_URL: ${LANGFUSE_BASE_URL:-https://cloud.langfuse.com}
+      WORKSPACE_ROOT: /app/.workspaces
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      sandbox: {condition: service_started}
+    networks: [backend]
+
+  ui:
+    build: .
+    command: ["streamlit", "run", "ui/app.py", "--server.address", "0.0.0.0", "--server.port", "8501",
+              "--server.headless", "true", "--browser.gatherUsageStats", "false"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://prreview:${POSTGRES_PASSWORD:-prreview}@postgres:5432/prreview
+    ports:
+      - "127.0.0.1:8501:8501"
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    networks: [backend]
+
+  publisher:
+    build: .
+    profiles: [publish]
+    command: ["python", "-m", "prreview.publisher"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://prreview:${POSTGRES_PASSWORD:-prreview}@postgres:5432/prreview
+      GITHUB_WRITE_TOKEN: ${GITHUB_WRITE_TOKEN:-}
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    networks: [backend]
+
+networks:
+  backend: {}
+
+volumes:
+  pgdata: {}

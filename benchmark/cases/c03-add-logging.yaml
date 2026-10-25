@@ -1,0 +1,21 @@
+id: c03-add-logging
+kind: clean
+title: Log job start and finish
+body: Helps debugging slow jobs. Job objects always have a name attribute.
+files:
+  - path: app/jobs.py
+    base: |
+      def run_job(job):
+          result = job.execute()
+          return result
+    head: |
+      import logging
+
+      logger = logging.getLogger(__name__)
+
+
+      def run_job(job):
+          logger.info("starting job %s", job.name)
+          result = job.execute()
+          logger.info("finished job %s", job.name)
+          return result

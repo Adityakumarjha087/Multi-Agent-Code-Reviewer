@@ -1,0 +1,16 @@
+id: s07-vulnerable-dependency
+kind: security
+title: Add YAML support
+body: Pins PyYAML for the config loader.
+files:
+  - path: requirements.txt
+    base: |
+      # runtime dependencies
+    head: |
+      # runtime dependencies
+      pyyaml==5.3
+labels:
+  - file: requirements.txt
+    lines: [2, 2]
+    categories: [unsafe_dependency]
+    note: "PyYAML 5.3 has known advisories (e.g. PYSEC-2020-96, arbitrary code execution)"

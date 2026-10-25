@@ -1,0 +1,9 @@
+.venv
+.uv-cache
+.workspaces
+.pytest-tmp
+.pytest_cache
+scratch
+benchmark/results
+**/__pycache__
+.env

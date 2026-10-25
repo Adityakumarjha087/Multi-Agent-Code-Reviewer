@@ -1,0 +1,15 @@
+id: b12-string-version-compare
+kind: bug
+title: Add is_newer() for the update checker
+body: Compares installed and available versions.
+files:
+  - path: app/versions.py
+    head: |
+      def is_newer(candidate: str, current: str) -> bool:
+          """Compare dotted versions like '1.10.0' and '1.9.2'."""
+          return candidate > current
+labels:
+  - file: app/versions.py
+    lines: [3, 3]
+    categories: [logic_error, edge_case]
+    note: "string comparison: '1.10.0' > '1.9.2' is False"

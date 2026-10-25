@@ -1,0 +1,21 @@
+id: c02-type-hints
+kind: clean
+title: Add type hints to geometry helpers
+body: No behaviour change.
+files:
+  - path: app/geometry.py
+    base: |
+      import math
+
+
+      def distance(a, b):
+          return math.hypot(b[0] - a[0], b[1] - a[1])
+    head: |
+      import math
+
+      Point = tuple[float, float]
+
+
+      def distance(a: Point, b: Point) -> float:
+          """Euclidean distance between two points."""
+          return math.hypot(b[0] - a[0], b[1] - a[1])

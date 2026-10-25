@@ -1,0 +1,22 @@
+[project]
+name = "prreview"
+version = "0.1.0"
+description = "Multi-agent GitHub pull request reviewer"
+requires-python = ">=3.11,<3.12"
+
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Keep pytest temp files inside the project directory (wiped at the start of each run).
+addopts = "--basetemp=.pytest-tmp"
+asyncio_mode = "auto"
+markers = [
+    "docker: needs a running Docker daemon",
+    "network: calls the real GitHub API",
+]

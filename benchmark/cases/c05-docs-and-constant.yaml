@@ -1,0 +1,21 @@
+id: c05-docs-and-constant
+kind: clean
+title: Document paging and add MAX_PAGE_SIZE
+body: Docs only, plus a constant the API layer will use in a follow-up.
+files:
+  - path: README.md
+    base: |
+      # Inventory service
+    head: |
+      # Inventory service
+
+      ## Paging
+
+      List endpoints return `PAGE_SIZE` items by default. Clients may request up to
+      `MAX_PAGE_SIZE` items with the `per_page` query parameter.
+  - path: app/constants.py
+    base: |
+      PAGE_SIZE = 20
+    head: |
+      PAGE_SIZE = 20
+      MAX_PAGE_SIZE = 100

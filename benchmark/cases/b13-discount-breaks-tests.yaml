@@ -1,0 +1,40 @@
+id: b13-discount-breaks-tests
+kind: bug
+title: Simplify discount math
+body: Cleans up apply_discount.
+files:
+  - path: app/pricing.py
+    base: |
+      def apply_discount(price: float, percent: float) -> float:
+          """Return the price after a percentage discount (0-100)."""
+          return round(price * (1 - percent / 100), 2)
+    head: |
+      def apply_discount(price: float, percent: float) -> float:
+          """Return the price after a percentage discount (0-100)."""
+          return round(price * (1 - percent), 2)
+  - path: tests/test_pricing.py
+    base: |
+      from app.pricing import apply_discount
+
+
+      def test_ten_percent():
+          assert apply_discount(200.0, 10) == 180.0
+
+
+      def test_no_discount():
+          assert apply_discount(50.0, 0) == 50.0
+    head: |
+      from app.pricing import apply_discount
+
+
+      def test_ten_percent():
+          assert apply_discount(200.0, 10) == 180.0
+
+
+      def test_no_discount():
+          assert apply_discount(50.0, 0) == 50.0
+labels:
+  - file: app/pricing.py
+    lines: [3, 3]
+    categories: [logic_error, test_failure]
+    note: "percent is 0-100 but is no longer divided by 100; test_ten_percent now fails (200 * -9)"

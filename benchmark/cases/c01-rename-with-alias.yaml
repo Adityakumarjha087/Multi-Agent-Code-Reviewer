@@ -1,0 +1,16 @@
+id: c01-rename-with-alias
+kind: clean
+title: Rename clean() to collapse_whitespace()
+body: Clearer name; keeps the old name as an alias for callers.
+files:
+  - path: app/text.py
+    base: |
+      def clean(s):
+          return " ".join(s.split())
+    head: |
+      def collapse_whitespace(text: str) -> str:
+          """Replace runs of whitespace with a single space and trim the ends."""
+          return " ".join(text.split())
+
+
+      clean = collapse_whitespace  # backwards-compatible alias

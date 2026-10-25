@@ -1,0 +1,24 @@
+id: b11-unlocked-counter
+kind: bug
+title: Thread-safe hit counter
+body: Counter shared by the request handler threads.
+files:
+  - path: app/counter.py
+    head: |
+      import threading
+
+
+      class HitCounter:
+          def __init__(self):
+              self.count = 0
+              self.lock = threading.Lock()
+
+          def hit(self):
+              current = self.count
+              self.count = current + 1
+              return self.count
+labels:
+  - file: app/counter.py
+    lines: [10, 12]
+    categories: [concurrency, logic_error]
+    note: "the lock is created but never acquired; concurrent read-modify-write loses increments"

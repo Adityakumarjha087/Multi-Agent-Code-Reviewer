@@ -1,0 +1,16 @@
+id: b09-integer-division-percent
+kind: bug
+title: Progress percentage helper
+body: For the upload progress bar.
+files:
+  - path: app/progress.py
+    head: |
+      def percent_done(done: int, total: int) -> float:
+          if total == 0:
+              return 0.0
+          return done // total * 100
+labels:
+  - file: app/progress.py
+    lines: [4, 4]
+    categories: [logic_error]
+    note: "floor division makes the result 0 until done == total (e.g. 50/100 -> 0)"

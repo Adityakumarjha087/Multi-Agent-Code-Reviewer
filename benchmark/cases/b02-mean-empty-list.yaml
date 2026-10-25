@@ -1,0 +1,21 @@
+id: b02-mean-empty-list
+kind: bug
+title: Add mean() to stats module
+body: Small helper used by the dashboard.
+files:
+  - path: app/stats.py
+    base: |
+      def total(values):
+          return sum(values)
+    head: |
+      def total(values):
+          return sum(values)
+
+
+      def mean(values):
+          return total(values) / len(values)
+labels:
+  - file: app/stats.py
+    lines: [6, 6]
+    categories: [edge_case, logic_error, error_handling]
+    note: "ZeroDivisionError for an empty list"

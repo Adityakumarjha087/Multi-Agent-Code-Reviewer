@@ -1,0 +1,22 @@
+id: b10-missing-none-check
+kind: bug
+title: Add normalized_email()
+body: Normalises user emails for de-duplication.
+files:
+  - path: app/users.py
+    base: |
+      def display_name(user: dict) -> str:
+          return user["name"]
+    head: |
+      def display_name(user: dict) -> str:
+          return user["name"]
+
+
+      def normalized_email(user: dict) -> str:
+          """Users created via SSO may not have an email."""
+          return user.get("email").strip().lower()
+labels:
+  - file: app/users.py
+    lines: [7, 7]
+    categories: [edge_case, error_handling, logic_error]
+    note: "user.get('email') returns None for SSO users (as the docstring says), so .strip() raises AttributeError"

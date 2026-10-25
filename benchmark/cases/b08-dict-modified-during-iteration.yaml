@@ -1,0 +1,30 @@
+id: b08-dict-modified-during-iteration
+kind: bug
+title: Add cache purge
+body: Removes expired cache entries.
+files:
+  - path: app/cache.py
+    base: |
+      class Cache:
+          def __init__(self):
+              self.entries = {}
+
+          def put(self, key, value, expires_at):
+              self.entries[key] = (value, expires_at)
+    head: |
+      class Cache:
+          def __init__(self):
+              self.entries = {}
+
+          def put(self, key, value, expires_at):
+              self.entries[key] = (value, expires_at)
+
+          def purge(self, now):
+              for key, (_, expires_at) in self.entries.items():
+                  if expires_at <= now:
+                      del self.entries[key]
+labels:
+  - file: app/cache.py
+    lines: [9, 11]
+    categories: [logic_error, edge_case, error_handling]
+    note: "deleting from a dict while iterating it raises RuntimeError: dictionary changed size during iteration"

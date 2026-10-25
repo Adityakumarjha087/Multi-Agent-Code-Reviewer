@@ -1,0 +1,20 @@
+id: b05-file-handle-leak
+kind: bug
+title: Write JSON-lines report
+body: Exports report rows to a file.
+files:
+  - path: app/report.py
+    head: |
+      import json
+
+
+      def write_report(path, rows):
+          handle = open(path, "w")
+          for row in rows:
+              handle.write(json.dumps(row) + "\n")
+          handle.close()
+labels:
+  - file: app/report.py
+    lines: [5, 8]
+    categories: [error_handling, logic_error]
+    note: "if json.dumps raises (non-serialisable row) the file is never closed; use a with block"

@@ -1,0 +1,18 @@
+id: b07-exclusive-date-range
+kind: bug
+title: Add in_period() for report filters
+body: Used by the monthly report to filter rows.
+files:
+  - path: app/report_range.py
+    head: |
+      from datetime import date
+
+
+      def in_period(day: date, start: date, end: date) -> bool:
+          """True if day falls in the period, both ends inclusive."""
+          return start < day < end
+labels:
+  - file: app/report_range.py
+    lines: [6, 6]
+    categories: [logic_error, edge_case]
+    note: "docstring says inclusive but strict comparisons exclude the first and last day"

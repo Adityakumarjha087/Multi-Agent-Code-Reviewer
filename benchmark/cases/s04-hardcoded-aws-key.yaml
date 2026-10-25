@@ -1,0 +1,17 @@
+id: s04-hardcoded-aws-key
+kind: security
+title: Configure S3 access
+body: Adds AWS credentials for the backup job.
+files:
+  - path: app/settings.py
+    base: |
+      REGION = "eu-west-1"
+    head: |
+      REGION = "eu-west-1"
+      AWS_ACCESS_KEY_ID = "{{fake:aws_access_key_id}}"
+      AWS_SECRET_ACCESS_KEY = "{{fake:aws_secret_access_key}}"
+labels:
+  - file: app/settings.py
+    lines: [2, 3]
+    categories: [hardcoded_secret]
+    note: "AWS credentials committed to source (placeholders are filled with AWS's documented example pair at load time)"

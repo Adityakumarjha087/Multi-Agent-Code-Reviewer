@@ -1,0 +1,45 @@
+id: b14-duration-division-breaks-tests
+kind: bug
+title: Support days in parse_duration
+body: Adds the 'd' unit and normalises input.
+files:
+  - path: app/durations.py
+    base: |
+      def parse_duration(text: str) -> int:
+          """Parse '90s', '5m' or '2h' into seconds."""
+          value, unit = int(text[:-1]), text[-1]
+          factors = {"s": 1, "m": 60, "h": 3600}
+          return value * factors[unit]
+    head: |
+      def parse_duration(text: str) -> int:
+          """Parse '90s', '5m', '2h' or '1d' into seconds."""
+          text = text.strip().lower()
+          value, unit = int(text[:-1]), text[-1]
+          factors = {"s": 1, "m": 60, "h": 3600, "d": 86400}
+          return value // factors[unit]
+  - path: tests/test_durations.py
+    base: |
+      from app.durations import parse_duration
+
+
+      def test_minutes():
+          assert parse_duration("5m") == 300
+
+
+      def test_seconds():
+          assert parse_duration("90s") == 90
+    head: |
+      from app.durations import parse_duration
+
+
+      def test_minutes():
+          assert parse_duration("5m") == 300
+
+
+      def test_seconds():
+          assert parse_duration("90s") == 90
+labels:
+  - file: app/durations.py
+    lines: [6, 6]
+    categories: [logic_error, test_failure]
+    note: "multiplication became floor division: '5m' -> 0; test_minutes now fails"

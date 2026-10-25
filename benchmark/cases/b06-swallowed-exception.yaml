@@ -1,0 +1,25 @@
+id: b06-swallowed-exception
+kind: bug
+title: Make charge() resilient
+body: Gateway errors were crashing the checkout page, so we catch them now.
+files:
+  - path: app/payments.py
+    base: |
+      def charge(gateway, amount):
+          return gateway.charge(amount)
+    head: |
+      import logging
+
+      logger = logging.getLogger(__name__)
+
+
+      def charge(gateway, amount):
+          try:
+              return gateway.charge(amount)
+          except Exception:
+              pass
+labels:
+  - file: app/payments.py
+    lines: [9, 10]
+    categories: [error_handling]
+    note: "every failure is silently swallowed and charge() returns None; callers cannot tell a failed payment from success"

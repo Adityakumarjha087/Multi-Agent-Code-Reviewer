@@ -1,0 +1,17 @@
+id: s06-unsafe-yaml-load
+kind: security
+title: Load uploaded YAML config
+body: Users can upload a YAML file to configure their workspace.
+files:
+  - path: app/config_loader.py
+    head: |
+      import yaml
+
+
+      def load_config(uploaded_text: str) -> dict:
+          return yaml.load(uploaded_text, Loader=yaml.Loader)
+labels:
+  - file: app/config_loader.py
+    lines: [5, 5]
+    categories: [injection, insecure_config]
+    note: "yaml.Loader can construct arbitrary Python objects from untrusted input; use yaml.safe_load"

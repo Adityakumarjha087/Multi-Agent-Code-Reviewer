@@ -1,0 +1,19 @@
+id: b03-mutable-default-cart
+kind: bug
+title: Add shopping cart model
+body: First version of the Cart class.
+files:
+  - path: app/cart.py
+    head: |
+      class Cart:
+          def __init__(self, items=[]):
+              self.items = items
+
+          def add(self, item):
+              self.items.append(item)
+              return self
+labels:
+  - file: app/cart.py
+    lines: [2, 3]
+    categories: [logic_error, edge_case]
+    note: "mutable default list is shared by every Cart created without items"
