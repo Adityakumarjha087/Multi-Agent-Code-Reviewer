@@ -78,3 +78,14 @@ def test_results_link_to_the_pull_request_and_show_decision_progress(monkeypatch
     assert not app.exception
     assert any("https://github.com/octo/demo/pull/7" in m.value for m in app.markdown)
     assert any(p.proto.text == "2 of 3 comments decided" for p in app.get("progress"))
+
+
+def test_sidebar_marks_status_and_highlights_the_open_review(monkeypatch: pytest.MonkeyPatch) -> None:
+    other = completed("r2")
+    other.status, other.number = "failed", 8
+    app = run_app(monkeypatch, StubRepo([completed(), other], [], []), review="r1")
+    assert not app.exception
+    buttons = {b.key: b for b in app.sidebar.button}
+    assert buttons["open-r1"].label.startswith("✅") and buttons["open-r2"].label.startswith("❌")
+    assert buttons["open-r1"].proto.type == "primary"
+    assert buttons["open-r2"].proto.type == "secondary"

@@ -16,6 +16,7 @@ from prreview.review.runner import parse_pr_url
 
 ACTIVE = ("queued", "running")
 SEVERITY_COLOR = {"critical": "red", "high": "orange", "medium": "yellow", "low": "blue", "info": "gray"}
+REVIEW_ICON = {"queued": "⏳", "running": "🔄", "completed": "✅", "failed": "❌"}
 STATUS_COLOR = {"pending": "gray", "approved": "green", "rejected": "red", "posting": "orange", "posted": "violet", "post_failed": "red"}
 
 
@@ -42,9 +43,11 @@ def _sidebar(repo: Repository) -> None:
     rows = repo.recent_reviews()
     if not rows:
         st.sidebar.caption("No reviews yet. Paste a pull request URL to start one.")
+    current = st.query_params.get("review")
     for row in rows:
-        label = f"{row.owner}/{row.repo}#{row.number} · {row.status}"
-        if st.sidebar.button(label, key=f"open-{row.id}", width="stretch"):
+        label = f"{REVIEW_ICON.get(row.status, '')} {row.owner}/{row.repo}#{row.number} · {row.status}".strip()
+        kind = "primary" if row.id == current else "secondary"
+        if st.sidebar.button(label, key=f"open-{row.id}", type=kind, width="stretch"):
             st.query_params["review"] = row.id
             st.rerun()
 
