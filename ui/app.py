@@ -68,6 +68,7 @@ def _review_panel(repo: Repository, review_id: str) -> None:
         st.warning(f"No review with id {review_id}.")
         return
     st.subheader(f"{row.owner}/{row.repo}#{row.number}")
+    st.markdown(f"[Open on GitHub](https://github.com/{row.owner}/{row.repo}/pull/{row.number})")
     if row.status in ACTIVE:
         _live_progress(repo, review_id)
         return
@@ -115,6 +116,9 @@ def _results(repo: Repository, row: ReviewRow) -> None:
             st.markdown(f"- **{note['agent']}/{note['kind']}**: {note['message']}")
     _events(repo, row.id, expanded=False)
     st.divider()
+    if comments:
+        decided = sum(c.status != "pending" for c in comments)
+        st.progress(decided / len(comments), text=f"{decided} of {len(comments)} comments decided")
     st.caption("Approve the comments to post. Approved comments are posted by the publisher service, not by this page.")
     if not comments:
         st.info("No draft comments: the reviewers found nothing worth posting on this pull request.")

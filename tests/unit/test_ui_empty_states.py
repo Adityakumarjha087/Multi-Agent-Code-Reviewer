@@ -63,3 +63,18 @@ def test_completed_review_without_comments_says_so(monkeypatch: pytest.MonkeyPat
     captions = [c.value for c in app.caption]
     assert any("No notes" in c for c in captions)
     assert any("No agent events" in c for c in captions)
+
+
+def comment(comment_id: str, status: str) -> SimpleNamespace:
+    return SimpleNamespace(
+        id=comment_id, severity="high", file="a.py", start_line=None, line=3, status=status, body="x",
+        posted_url="", post_error="",
+    )
+
+
+def test_results_link_to_the_pull_request_and_show_decision_progress(monkeypatch: pytest.MonkeyPatch) -> None:
+    comments = [comment("c1", "approved"), comment("c2", "pending"), comment("c3", "rejected")]
+    app = run_app(monkeypatch, StubRepo([completed()], comments, []), review="r1")
+    assert not app.exception
+    assert any("https://github.com/octo/demo/pull/7" in m.value for m in app.markdown)
+    assert any(p.proto.text == "2 of 3 comments decided" for p in app.get("progress"))
