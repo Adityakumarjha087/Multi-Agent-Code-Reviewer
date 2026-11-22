@@ -39,7 +39,10 @@ def main() -> None:
 
 def _sidebar(repo: Repository) -> None:
     st.sidebar.header("Recent reviews")
-    for row in repo.recent_reviews():
+    rows = repo.recent_reviews()
+    if not rows:
+        st.sidebar.caption("No reviews yet. Paste a pull request URL to start one.")
+    for row in rows:
         label = f"{row.owner}/{row.repo}#{row.number} · {row.status}"
         if st.sidebar.button(label, key=f"open-{row.id}", width="stretch"):
             st.query_params["review"] = row.id
@@ -89,6 +92,8 @@ def _live_progress(repo: Repository, review_id: str) -> None:
 def _events(repo: Repository, review_id: str, expanded: bool) -> None:
     events = repo.events(review_id)
     with st.expander(f"Agent progress ({len(events)} events)", expanded=expanded):
+        if not events:
+            st.caption("No agent events recorded yet.")
         for event in events:
             st.markdown(f"`{event.created_at:%H:%M:%S}` **{event.agent}** {event.kind}: {event.message}")
 
@@ -104,11 +109,15 @@ def _results(repo: Repository, row: ReviewRow) -> None:
         st.markdown(f"**Summary:** {row.summary}")
     notes = (row.state or {}).get("notes", [])
     with st.expander(f"Notes ({len(notes)}): skipped work, tool failures, discarded findings"):
+        if not notes:
+            st.caption("No notes: nothing was skipped, no tool failed, no finding was discarded.")
         for note in notes:
             st.markdown(f"- **{note['agent']}/{note['kind']}**: {note['message']}")
     _events(repo, row.id, expanded=False)
     st.divider()
     st.caption("Approve the comments to post. Approved comments are posted by the publisher service, not by this page.")
+    if not comments:
+        st.info("No draft comments: the reviewers found nothing worth posting on this pull request.")
     for comment in comments:
         _comment_card(repo, comment)
 
