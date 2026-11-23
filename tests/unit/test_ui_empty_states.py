@@ -32,6 +32,9 @@ class StubRepo:
     def events(self, review_id: str) -> list:
         return self._events
 
+    def enqueue(self, ref) -> str:  # only reached with a URL that parsed
+        raise AssertionError("a rejected URL must not be queued")
+
 
 def completed(review_id: str = "r1") -> SimpleNamespace:
     return SimpleNamespace(
@@ -89,3 +92,24 @@ def test_sidebar_marks_status_and_highlights_the_open_review(monkeypatch: pytest
     assert buttons["open-r1"].label.startswith("✅") and buttons["open-r2"].label.startswith("❌")
     assert buttons["open-r1"].proto.type == "primary"
     assert buttons["open-r2"].proto.type == "secondary"
+
+
+def test_blank_url_gets_a_specific_message(monkeypatch: pytest.MonkeyPatch) -> None:
+    app = run_app(monkeypatch, StubRepo([], [], []))
+    next(b for b in app.button if b.label == "Start review").click().run()
+    assert any("Enter a pull request URL" in e.value for e in app.error)
+
+
+def test_malformed_url_shows_the_expected_form(monkeypatch: pytest.MonkeyPatch) -> None:
+    app = run_app(monkeypatch, StubRepo([], [], []))
+    app.text_input[0].input("https://example.com/nope")
+    next(b for b in app.button if b.label == "Start review").click().run()
+    assert any("owner/repo/pull/123" in e.value and "example.com/nope" in e.value for e in app.error)
+
+
+def test_posted_comment_links_to_github(monkeypatch: pytest.MonkeyPatch) -> None:
+    posted = comment("c1", "posted")
+    posted.posted_url = "https://github.com/octo/demo/pull/7#discussion_r1"
+    app = run_app(monkeypatch, StubRepo([completed()], [posted], []), review="r1")
+    assert not app.exception
+    assert any("](https://github.com/octo/demo/pull/7#discussion_r1)" in m.value for m in app.markdown)

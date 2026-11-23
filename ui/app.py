@@ -56,10 +56,16 @@ def _new_review_form(repo: Repository) -> None:
     with st.form("new-review", clear_on_submit=True):
         url = st.text_input("Pull request URL", placeholder="https://github.com/owner/repo/pull/123")
         if st.form_submit_button("Start review"):
+            if not url.strip():
+                st.error("Enter a pull request URL, for example https://github.com/owner/repo/pull/123.")
+                return
             try:
                 review_id = repo.enqueue(parse_pr_url(url))
-            except ValueError as exc:
-                st.error(str(exc))
+            except ValueError:
+                st.error(
+                    f"{url.strip()!r} is not a GitHub pull request URL. "
+                    "Use the form https://github.com/owner/repo/pull/123."
+                )
                 return
             st.query_params["review"] = review_id
             st.rerun()
@@ -139,7 +145,7 @@ def _comment_card(repo: Repository, comment: CommentRow) -> None:
         # in the approver's browser (no remote images or links from PR-derived content).
         st.code(comment.body, language="markdown", wrap_lines=True)
         if comment.posted_url:
-            st.markdown(f"Posted: {comment.posted_url}")
+            st.markdown(f"Posted: [view the comment on GitHub]({comment.posted_url})")
         if comment.post_error:
             st.error(comment.post_error)
         _decision_buttons(repo, comment)
