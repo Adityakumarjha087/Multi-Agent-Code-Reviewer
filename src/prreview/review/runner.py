@@ -17,7 +17,10 @@ from prreview.schemas.github import ChangedFilesPage, PRRef, PullRequest
 from prreview.schemas.review import PRContext, ReviewState
 from prreview.schemas.search import FileListing
 
-_PR_URL = re.compile(r"^https://github\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)/pull/(\d+)/?$")
+_PR_URL = re.compile(
+    r"^https://(?:www\.)?github\.com/([A-Za-z0-9_.-]+)/([A-Za-z0-9_.-]+)/pull/(\d+)"
+    r"(?:/(?:files|commits|checks)?)?(?:[?#].*)?$"
+)
 TEST_FILE_GLOBS = ("*test_*.py", "*_test.py", "pytest.ini")
 
 
@@ -34,7 +37,11 @@ class ReviewOutcome:
 
 
 def parse_pr_url(url: str) -> PRRef:
-    """Parse `https://github.com/<owner>/<repo>/pull/<n>`."""
+    """Parse `https://github.com/<owner>/<repo>/pull/<n>`.
+
+    A trailing `/files`, `/commits` or `/checks` tab, a query string and a `#fragment` (as copied from
+    the browser address bar) are accepted and ignored.
+    """
     match = _PR_URL.match(url.strip())
     if not match:
         raise ValueError(f"not a GitHub pull request URL: {url!r}")
