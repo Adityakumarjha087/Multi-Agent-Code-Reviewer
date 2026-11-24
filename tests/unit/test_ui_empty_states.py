@@ -126,3 +126,17 @@ def test_unreachable_database_shows_a_readable_error(monkeypatch: pytest.MonkeyP
     assert not app.exception
     assert any("Cannot reach the database" in e.value for e in app.error)
     assert not app.text_input  # the form is not offered when nothing can be queued
+
+
+def comment(cid: str, status: str, severity: str = "high") -> SimpleNamespace:
+    return SimpleNamespace(
+        id=cid, severity=severity, status=status, file="a.py", line=3, start_line=None,
+        body="Check this.", posted_url=None, post_error=None,
+    )
+
+
+def test_comment_cards_summarise_decisions(monkeypatch: pytest.MonkeyPatch) -> None:
+    comments = [comment("c1", "pending"), comment("c2", "approved"), comment("c3", "pending"), comment("c4", "post_failed")]
+    app = run_app(monkeypatch, StubRepo([completed()], comments, []), review="r1")
+    assert not app.exception
+    assert any("2 pending · 1 approved · 1 post failed" in c.value for c in app.caption)

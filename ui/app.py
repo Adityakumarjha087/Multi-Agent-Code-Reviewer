@@ -137,6 +137,7 @@ def _results(repo: Repository, row: ReviewRow) -> None:
     if comments:
         decided = sum(c.status != "pending" for c in comments)
         st.progress(decided / len(comments), text=f"{decided} of {len(comments)} comments decided")
+        st.caption(_status_breakdown(comments))
     st.caption("Approve the comments to post. Approved comments are posted by the publisher service, not by this page.")
     if not comments:
         st.info("No draft comments: the reviewers found nothing worth posting on this pull request.")
@@ -144,12 +145,19 @@ def _results(repo: Repository, row: ReviewRow) -> None:
         _comment_card(repo, comment)
 
 
+def _status_breakdown(comments: list[CommentRow]) -> str:
+    """One line such as '2 pending · 1 approved', in a fixed status order, omitting empty statuses."""
+    counts = {status: sum(c.status == status for c in comments) for status in STATUS_COLOR}
+    return " · ".join(f"{n} {status.replace('_', ' ')}" for status, n in counts.items() if n)
+
+
 def _comment_card(repo: Repository, comment: CommentRow) -> None:
     with st.container(border=True):
         location = f"{comment.file}:{comment.start_line}-{comment.line}" if comment.start_line else f"{comment.file}:{comment.line}"
-        st.badge(comment.severity.upper(), color=SEVERITY_COLOR.get(comment.severity, "gray"))
-        st.markdown(f"`{location}`")
-        st.badge(comment.status, color=STATUS_COLOR.get(comment.status, "gray"))
+        severity, where, status = st.columns([1, 6, 2], vertical_alignment="center")
+        severity.badge(comment.severity.upper(), color=SEVERITY_COLOR.get(comment.severity, "gray"))
+        where.markdown(f"`{location}`")
+        status.badge(comment.status, color=STATUS_COLOR.get(comment.status, "gray"))
         # Shown as literal text: this is exactly what will be posted, and nothing in it is rendered
         # in the approver's browser (no remote images or links from PR-derived content).
         st.code(comment.body, language="markdown", wrap_lines=True)
