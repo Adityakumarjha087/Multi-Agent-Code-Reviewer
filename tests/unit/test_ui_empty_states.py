@@ -113,3 +113,16 @@ def test_posted_comment_links_to_github(monkeypatch: pytest.MonkeyPatch) -> None
     app = run_app(monkeypatch, StubRepo([completed()], [posted], []), review="r1")
     assert not app.exception
     assert any("](https://github.com/octo/demo/pull/7#discussion_r1)" in m.value for m in app.markdown)
+
+
+def test_unreachable_database_shows_a_readable_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    from sqlalchemy.exc import OperationalError
+
+    class DownRepo(StubRepo):
+        def recent_reviews(self) -> list:
+            raise OperationalError("SELECT 1", {}, Exception("connection refused"))
+
+    app = run_app(monkeypatch, DownRepo([], [], []))
+    assert not app.exception
+    assert any("Cannot reach the database" in e.value for e in app.error)
+    assert not app.text_input  # the form is not offered when nothing can be queued

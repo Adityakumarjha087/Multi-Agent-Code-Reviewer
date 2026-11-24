@@ -8,6 +8,7 @@ Run: `streamlit run ui/app.py`
 from __future__ import annotations
 
 import streamlit as st
+from sqlalchemy.exc import SQLAlchemyError
 
 from prreview.config import database_settings
 from prreview.persistence.models import CommentRow, ReviewRow
@@ -30,8 +31,16 @@ def main() -> None:
     """Page entry point."""
     st.set_page_config(page_title="PR review", page_icon=":mag:", layout="wide")
     st.title("Multi-agent PR review")
-    repo = repository()
-    _sidebar(repo)
+    try:
+        repo = repository()
+        _sidebar(repo)
+    except SQLAlchemyError as exc:
+        st.error(
+            "Cannot reach the database, so reviews cannot be listed or queued. "
+            "Check that Postgres is running and that DATABASE_URL is correct, then reload this page."
+        )
+        st.caption(f"{type(exc).__name__}: {str(exc).splitlines()[0] if str(exc) else 'no detail'}")
+        st.stop()
     _new_review_form(repo)
     review_id = st.query_params.get("review")
     if review_id:
