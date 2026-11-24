@@ -13,7 +13,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from prreview.config import database_settings
 from prreview.persistence.models import CommentRow, ReviewRow
 from prreview.persistence.repo import InvalidTransitionError, Repository
-from prreview.review.runner import parse_pr_url
+from prreview.review.runner import PRRef, parse_pr_url
 
 ACTIVE = ("queued", "running")
 SEVERITY_COLOR = {"critical": "red", "high": "orange", "medium": "yellow", "low": "blue", "info": "gray"}
@@ -93,6 +93,9 @@ def _review_panel(repo: Repository, review_id: str) -> None:
     if row.status == "failed":
         st.error("Review failed")
         st.code(row.error, language="text")
+        if st.button("Retry review", key=f"retry-{row.id}", help="Queue a new review of this pull request"):
+            st.query_params["review"] = repo.enqueue(PRRef(owner=row.owner, repo=row.repo, number=row.number))
+            st.rerun()
         _events(repo, review_id, expanded=False)
         return
     _results(repo, row)

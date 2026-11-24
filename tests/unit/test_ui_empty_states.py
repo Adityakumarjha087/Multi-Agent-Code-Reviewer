@@ -140,3 +140,20 @@ def test_comment_cards_summarise_decisions(monkeypatch: pytest.MonkeyPatch) -> N
     app = run_app(monkeypatch, StubRepo([completed()], comments, []), review="r1")
     assert not app.exception
     assert any("2 pending · 1 approved · 1 post failed" in c.value for c in app.caption)
+
+
+def test_failed_review_can_be_retried(monkeypatch: pytest.MonkeyPatch) -> None:
+    queued: list = []
+
+    class RetryRepo(StubRepo):
+        def enqueue(self, ref) -> str:
+            queued.append(ref)
+            return "r2"
+
+    failed = completed()
+    failed.status, failed.error = "failed", "GitHub returned 502"
+    app = run_app(monkeypatch, RetryRepo([failed], [], []), review="r1")
+    assert not app.exception
+    app.button(key="retry-r1").click().run()
+    assert [(r.owner, r.repo, r.number) for r in queued] == [("octo", "demo", 7)]
+    assert app.query_params["review"] == ["r2"] or app.query_params["review"] == "r2"
