@@ -174,3 +174,11 @@ def test_bulk_buttons_decide_only_pending_comments(monkeypatch: pytest.MonkeyPat
 def test_bulk_buttons_hidden_with_fewer_than_two_pending(monkeypatch: pytest.MonkeyPatch) -> None:
     app = run_app(monkeypatch, StubRepo([completed()], [comment("c1", "pending")], []), review="r1")
     assert not [b for b in app.button if str(b.key).startswith("bulk-")]
+
+
+def test_severity_breakdown_lists_most_severe_first(monkeypatch: pytest.MonkeyPatch) -> None:
+    comments = [comment("c1", "pending"), comment("c2", "pending"), comment("c3", "pending")]
+    comments[0].severity = "low"
+    comments[1].severity = "critical"
+    app = run_app(monkeypatch, StubRepo([completed()], comments, []), review="r1")
+    assert any("1 critical · 1 high · 1 low | 3 pending" in c.value for c in app.caption)

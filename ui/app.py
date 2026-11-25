@@ -140,7 +140,7 @@ def _results(repo: Repository, row: ReviewRow) -> None:
     if comments:
         decided = sum(c.status != "pending" for c in comments)
         st.progress(decided / len(comments), text=f"{decided} of {len(comments)} comments decided")
-        st.caption(_status_breakdown(comments))
+        st.caption(f"{_severity_breakdown(comments)} | {_status_breakdown(comments)}")
     _bulk_decisions(repo, comments)
     st.caption("Approve the comments to post. Approved comments are posted by the publisher service, not by this page.")
     if not comments:
@@ -163,6 +163,12 @@ def _bulk_decisions(repo: Repository, comments: list[CommentRow]) -> None:
                 except InvalidTransitionError:  # claimed or decided elsewhere meanwhile: leave it as it is
                     continue
             st.rerun()
+
+
+def _severity_breakdown(comments: list[CommentRow]) -> str:
+    """One line such as '1 critical · 3 medium', most severe first, omitting severities with no comments."""
+    counts = {severity: sum(c.severity == severity for c in comments) for severity in SEVERITY_COLOR}
+    return " · ".join(f"{n} {severity}" for severity, n in counts.items() if n)
 
 
 def _status_breakdown(comments: list[CommentRow]) -> str:
