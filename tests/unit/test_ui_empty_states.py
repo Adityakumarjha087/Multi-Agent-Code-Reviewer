@@ -157,3 +157,20 @@ def test_failed_review_can_be_retried(monkeypatch: pytest.MonkeyPatch) -> None:
     app.button(key="retry-r1").click().run()
     assert [(r.owner, r.repo, r.number) for r in queued] == [("octo", "demo", 7)]
     assert app.query_params["review"] == ["r2"] or app.query_params["review"] == "r2"
+
+
+def test_bulk_buttons_decide_only_pending_comments(monkeypatch: pytest.MonkeyPatch) -> None:
+    comments = [comment("c1", "approved"), comment("c2", "pending"), comment("c3", "pending")]
+    stub = StubRepo([completed()], comments, [])
+    decided: list[tuple[str, str]] = []
+    stub.decide = lambda comment_id, status: decided.append((comment_id, status))  # type: ignore[attr-defined]
+    app = run_app(monkeypatch, stub, review="r1")
+    bulk = next(b for b in app.button if b.key == "bulk-rejected")
+    assert "(2)" in bulk.label
+    bulk.click().run()
+    assert decided == [("c2", "rejected"), ("c3", "rejected")]
+
+
+def test_bulk_buttons_hidden_with_fewer_than_two_pending(monkeypatch: pytest.MonkeyPatch) -> None:
+    app = run_app(monkeypatch, StubRepo([completed()], [comment("c1", "pending")], []), review="r1")
+    assert not [b for b in app.button if str(b.key).startswith("bulk-")]

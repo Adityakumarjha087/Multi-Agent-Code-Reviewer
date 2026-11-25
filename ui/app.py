@@ -141,11 +141,28 @@ def _results(repo: Repository, row: ReviewRow) -> None:
         decided = sum(c.status != "pending" for c in comments)
         st.progress(decided / len(comments), text=f"{decided} of {len(comments)} comments decided")
         st.caption(_status_breakdown(comments))
+    _bulk_decisions(repo, comments)
     st.caption("Approve the comments to post. Approved comments are posted by the publisher service, not by this page.")
     if not comments:
         st.info("No draft comments: the reviewers found nothing worth posting on this pull request.")
     for comment in comments:
         _comment_card(repo, comment)
+
+
+def _bulk_decisions(repo: Repository, comments: list[CommentRow]) -> None:
+    """Approve or reject every still-pending comment in one click (shown only when two or more wait)."""
+    pending = [c for c in comments if c.status == "pending"]
+    if len(pending) < 2:
+        return
+    approve, reject, _ = st.columns([2, 2, 5])
+    for column, label, status in ((approve, "Approve all pending", "approved"), (reject, "Reject all pending", "rejected")):
+        if column.button(f"{label} ({len(pending)})", key=f"bulk-{status}", help="Only comments that have not been decided yet"):
+            for comment in pending:
+                try:
+                    repo.decide(comment.id, status)
+                except InvalidTransitionError:  # claimed or decided elsewhere meanwhile: leave it as it is
+                    continue
+            st.rerun()
 
 
 def _status_breakdown(comments: list[CommentRow]) -> str:
