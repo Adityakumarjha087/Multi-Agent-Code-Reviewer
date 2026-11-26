@@ -145,8 +145,23 @@ def _results(repo: Repository, row: ReviewRow) -> None:
     st.caption("Approve the comments to post. Approved comments are posted by the publisher service, not by this page.")
     if not comments:
         st.info("No draft comments: the reviewers found nothing worth posting on this pull request.")
-    for comment in comments:
+    for comment in _filter_comments(comments):
         _comment_card(repo, comment)
+
+
+def _filter_comments(comments: list[CommentRow]) -> list[CommentRow]:
+    """Let the approver narrow a long list to one status (offered only when statuses are mixed)."""
+    present = [s for s in STATUS_COLOR if any(c.status == s for c in comments)]
+    if len(comments) < 3 or len(present) < 2:
+        return comments
+    options = ["all", *present]
+    chosen = st.segmented_control(
+        "Show comments", options, default="all", key="comment-filter",
+        format_func=lambda s: s if s == "all" else f"{s.replace('_', ' ')} ({sum(c.status == s for c in comments)})",
+    )
+    if chosen in (None, "all"):
+        return comments
+    return [c for c in comments if c.status == chosen]
 
 
 def _bulk_decisions(repo: Repository, comments: list[CommentRow]) -> None:

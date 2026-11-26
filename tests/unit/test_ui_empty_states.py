@@ -182,3 +182,19 @@ def test_severity_breakdown_lists_most_severe_first(monkeypatch: pytest.MonkeyPa
     comments[1].severity = "critical"
     app = run_app(monkeypatch, StubRepo([completed()], comments, []), review="r1")
     assert any("1 critical · 1 high · 1 low | 3 pending" in c.value for c in app.caption)
+
+
+def test_status_filter_narrows_the_comment_list(monkeypatch: pytest.MonkeyPatch) -> None:
+    comments = [comment("c1", "pending"), comment("c2", "approved"), comment("c3", "pending")]
+    app = run_app(monkeypatch, StubRepo([completed()], comments, []), review="r1")
+    assert not app.exception
+    assert len(app.get("code")) == 3
+    app.get("button_group")[0].set_value("approved").run()
+    assert not app.exception
+    assert len(app.get("code")) == 1
+
+
+def test_status_filter_hidden_when_statuses_do_not_vary(monkeypatch: pytest.MonkeyPatch) -> None:
+    comments = [comment("c1", "pending"), comment("c2", "pending"), comment("c3", "pending")]
+    app = run_app(monkeypatch, StubRepo([completed()], comments, []), review="r1")
+    assert not app.get("button_group")
