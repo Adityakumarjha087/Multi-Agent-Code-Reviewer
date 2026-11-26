@@ -108,6 +108,10 @@ def _live_progress(repo: Repository, review_id: str) -> None:
     if row is not None and row.status not in ACTIVE:
         st.rerun()
     st.info("Queued, waiting for a worker…" if row.status == "queued" else "Review running…")
+    events = repo.events(review_id)
+    if events:
+        latest = events[-1]
+        st.caption(f"Latest: {latest.agent} {latest.kind} at {latest.created_at:%H:%M:%S}")
     _events(repo, review_id, expanded=True)
 
 
@@ -124,9 +128,9 @@ def _results(repo: Repository, row: ReviewRow) -> None:
     comments = repo.comments(row.id)
     cols = st.columns(4)
     cols[0].metric("Draft comments", len(comments))
-    cols[1].metric("Steps", row.steps)
-    cols[2].metric("Cost", f"${float(row.cost_usd):.4f}")
-    cols[3].metric("Latency", f"{float(row.latency_s):.1f} s")
+    cols[1].metric("Steps", row.steps, help="Agent tool-loop steps taken across all reviewers")
+    cols[2].metric("Cost", f"${float(row.cost_usd):.4f}", help="Model spend for this review")
+    cols[3].metric("Latency", f"{float(row.latency_s):.1f} s", help="Wall-clock time from start to finish")
     if row.summary:
         st.markdown(f"**Summary:** {row.summary}")
     notes = (row.state or {}).get("notes", [])

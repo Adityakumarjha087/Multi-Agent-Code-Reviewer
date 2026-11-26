@@ -198,3 +198,17 @@ def test_status_filter_hidden_when_statuses_do_not_vary(monkeypatch: pytest.Monk
     comments = [comment("c1", "pending"), comment("c2", "pending"), comment("c3", "pending")]
     app = run_app(monkeypatch, StubRepo([completed()], comments, []), review="r1")
     assert not app.get("button_group")
+
+
+def test_running_review_shows_the_latest_event(monkeypatch: pytest.MonkeyPatch) -> None:
+    from datetime import datetime
+
+    running = completed()
+    running.status = "running"
+    events = [
+        SimpleNamespace(created_at=datetime(2026, 1, 1, 10, 0, 1), agent="planner", kind="plan", message="m"),
+        SimpleNamespace(created_at=datetime(2026, 1, 1, 10, 0, 9), agent="security", kind="tool_call", message="m"),
+    ]
+    app = run_app(monkeypatch, StubRepo([running], [], events), review="r1")
+    assert not app.exception
+    assert any("Latest: security tool_call at 10:00:09" in c.value for c in app.caption)
