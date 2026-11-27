@@ -87,6 +87,7 @@ def _review_panel(repo: Repository, review_id: str) -> None:
         return
     st.subheader(f"{row.owner}/{row.repo}#{row.number}")
     st.markdown(f"[Open on GitHub](https://github.com/{row.owner}/{row.repo}/pull/{row.number})")
+    st.caption(_timeline(row))
     if row.status in ACTIVE:
         _live_progress(repo, review_id)
         return
@@ -99,6 +100,16 @@ def _review_panel(repo: Repository, review_id: str) -> None:
         _events(repo, review_id, expanded=False)
         return
     _results(repo, row)
+
+
+def _timeline(row: ReviewRow) -> str:
+    """One line such as 'Queued 2026-10-09 14:02 · started 14:02 · finished 14:05', skipping unknown times."""
+    parts = [f"Queued {row.created_at:%Y-%m-%d %H:%M}"]
+    if row.started_at:
+        parts.append(f"started {row.started_at:%H:%M}")
+    if row.finished_at:
+        parts.append(f"{'failed' if row.status == 'failed' else 'finished'} {row.finished_at:%H:%M}")
+    return " · ".join(parts)
 
 
 @st.fragment(run_every=2)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -40,6 +41,7 @@ def completed(review_id: str = "r1") -> SimpleNamespace:
     return SimpleNamespace(
         id=review_id, owner="octo", repo="demo", number=7, status="completed", summary="", steps=3,
         cost_usd=0.01, latency_s=1.5, error="", state={"notes": []},
+        created_at=datetime(2026, 10, 9, 14, 2), started_at=None, finished_at=None,
     )
 
 
@@ -212,3 +214,18 @@ def test_running_review_shows_the_latest_event(monkeypatch: pytest.MonkeyPatch) 
     app = run_app(monkeypatch, StubRepo([running], [], events), review="r1")
     assert not app.exception
     assert any("Latest: security tool_call at 10:00:09" in c.value for c in app.caption)
+
+
+def test_review_shows_when_it_was_queued_started_and_finished(monkeypatch: pytest.MonkeyPatch) -> None:
+    done = completed()
+    done.started_at, done.finished_at = datetime(2026, 10, 9, 14, 3), datetime(2026, 10, 9, 14, 9)
+    app = run_app(monkeypatch, StubRepo([done], [], []), review="r1")
+    assert not app.exception
+    assert any(c.value == "Queued 2026-10-09 14:02 · started 14:03 · finished 14:09" for c in app.caption)
+
+
+def test_queued_review_timeline_only_has_the_queued_time(monkeypatch: pytest.MonkeyPatch) -> None:
+    queued = completed()
+    queued.status = "queued"
+    app = run_app(monkeypatch, StubRepo([queued], [], []), review="r1")
+    assert any(c.value == "Queued 2026-10-09 14:02" for c in app.caption)
