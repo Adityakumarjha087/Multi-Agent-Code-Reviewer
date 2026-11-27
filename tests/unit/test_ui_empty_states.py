@@ -229,3 +229,15 @@ def test_queued_review_timeline_only_has_the_queued_time(monkeypatch: pytest.Mon
     queued.status = "queued"
     app = run_app(monkeypatch, StubRepo([queued], [], []), review="r1")
     assert any(c.value == "Queued 2026-10-09 14:02" for c in app.caption)
+
+
+def test_sidebar_refresh_reloads_review_statuses(monkeypatch: pytest.MonkeyPatch) -> None:
+    review = completed()
+    review.status = "running"
+    stub = StubRepo([review], [], [])
+    app = run_app(monkeypatch, stub)
+    assert next(b for b in app.sidebar.button if b.key == "open-r1").label.startswith("🔄")
+    review.status = "completed"  # the worker finished in the meantime
+    app.sidebar.button(key="refresh-reviews").click().run()
+    assert not app.exception
+    assert next(b for b in app.sidebar.button if b.key == "open-r1").label.startswith("✅")

@@ -49,6 +49,8 @@ def main() -> None:
 
 def _sidebar(repo: Repository) -> None:
     st.sidebar.header("Recent reviews")
+    if st.sidebar.button("Refresh list", key="refresh-reviews", help="Reload review statuses from the database"):
+        st.rerun()
     rows = repo.recent_reviews()
     if not rows:
         st.sidebar.caption("No reviews yet. Paste a pull request URL to start one.")
