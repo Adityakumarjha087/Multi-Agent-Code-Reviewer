@@ -18,6 +18,11 @@ from prreview.review.runner import PRRef, parse_pr_url
 ACTIVE = ("queued", "running")
 SEVERITY_COLOR = {"critical": "red", "high": "orange", "medium": "yellow", "low": "blue", "info": "gray"}
 REVIEW_ICON = {"queued": "⏳", "running": "🔄", "completed": "✅", "failed": "❌"}
+STATUS_HINT = {
+    "approved": "Approved: the publisher will post this comment shortly.",
+    "posting": "Being posted by the publisher. Reload the page to see the result.",
+    "post_failed": "Posting failed. Approve again to retry once the cause is fixed.",
+}
 STATUS_COLOR = {"pending": "gray", "approved": "green", "rejected": "red", "posting": "orange", "posted": "violet", "post_failed": "red"}
 
 
@@ -223,6 +228,8 @@ def _comment_card(repo: Repository, comment: CommentRow) -> None:
             st.markdown(f"Posted: [view the comment on GitHub]({comment.posted_url})")
         if comment.post_error:
             st.error(comment.post_error)
+        if comment.status in STATUS_HINT:
+            st.caption(STATUS_HINT[comment.status])
         _decision_buttons(repo, comment)
 
 

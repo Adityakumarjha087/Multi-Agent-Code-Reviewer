@@ -241,3 +241,20 @@ def test_sidebar_refresh_reloads_review_statuses(monkeypatch: pytest.MonkeyPatch
     app.sidebar.button(key="refresh-reviews").click().run()
     assert not app.exception
     assert next(b for b in app.sidebar.button if b.key == "open-r1").label.startswith("✅")
+
+
+@pytest.mark.parametrize(
+    ("status", "hint"),
+    [("approved", "publisher will post"), ("posting", "Being posted"), ("post_failed", "Approve again to retry")],
+)
+def test_comment_status_explains_what_happens_next(monkeypatch: pytest.MonkeyPatch, status: str, hint: str) -> None:
+    app = run_app(monkeypatch, StubRepo([completed()], [comment("c1", status)], []), review="r1")
+    assert not app.exception
+    assert any(hint in c.value for c in app.caption)
+
+
+@pytest.mark.parametrize("status", ["pending", "rejected", "posted"])
+def test_settled_statuses_get_no_extra_hint(monkeypatch: pytest.MonkeyPatch, status: str) -> None:
+    app = run_app(monkeypatch, StubRepo([completed()], [comment("c1", status)], []), review="r1")
+    hints = ("publisher will post", "Being posted", "Approve again to retry")
+    assert not any(h in c.value for c in app.caption for h in hints)
